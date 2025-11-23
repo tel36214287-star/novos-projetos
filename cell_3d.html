@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Célula 3D Animada - Babylon.js</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+<script>
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+
+const createScene = () => {
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.95, 0.95, 1);
+
+    // Câmera
+    const camera = new BABYLON.ArcRotateCamera("camera", Math.PI/4, Math.PI/3, 15, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
+
+    // Luzes
+    const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1,1,0), scene);
+    light1.intensity = 0.6;
+    const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0,5,0), scene);
+    light2.intensity = 0.8;
+
+    // Membrana com leve ondulação
+    const membrane = BABYLON.MeshBuilder.CreateSphere("membrane", {diameter:6, segments:64}, scene);
+    const membraneMat = new BABYLON.StandardMaterial("membraneMat", scene);
+    membraneMat.diffuseColor = new BABYLON.Color3(0.5,1,0.5);
+    membraneMat.alpha = 0.25;
+    membraneMat.backFaceCulling = false;
+    membrane.material = membraneMat;
+
+    // Núcleo com brilho interno
+    const nucleus = BABYLON.MeshBuilder.CreateSphere("nucleus", {diameter:2}, scene);
+    const nucleusMat = new BABYLON.StandardMaterial("nucleusMat", scene);
+    nucleusMat.emissiveColor = new BABYLON.Color3(1,0.5,0.5);
+    nucleus.material = nucleusMat;
+
+    // Mitocôndrias animadas
+    const mitos = [];
+    for (let i=0; i<7; i++){
+        const mito = BABYLON.MeshBuilder.CreateSphere("mito"+i, {diameter:0.8}, scene);
+        mito.position = new BABYLON.Vector3(
+            (Math.random()-0.5)*4,
+            (Math.random()-0.5)*4,
+            (Math.random()-0.5)*4
+        );
+        const mitoMat = new BABYLON.StandardMaterial("mitoMat"+i, scene);
+        mitoMat.diffuseColor = new BABYLON.Color3(1,0.7,0);
+        mito.material = mitoMat;
+        mitos.push(mito);
+    }
+
+    // Ribossomos
+    const ribos = [];
+    for (let i=0; i<25; i++){
+        const ribo = BABYLON.MeshBuilder.CreateSphere("ribo"+i, {diameter:0.25}, scene);
+        ribo.position = new BABYLON.Vector3(
+            (Math.random()-0.5)*5,
+            (Math.random()-0.5)*5,
+            (Math.random()-0.5)*5
+        );
+        const riboMat = new BABYLON.StandardMaterial("riboMat"+i, scene);
+        riboMat.diffuseColor = new BABYLON.Color3(0.9,0.9,0.3);
+        ribo.material = riboMat;
+        ribos.push(ribo);
+    }
+
+    // Animação da membrana e organelos
+    scene.registerBeforeRender(() => {
+        const time = performance.now() * 0.002;
+        membrane.rotation.y = time * 0.05;
+        membrane.rotation.x = Math.sin(time * 0.3) * 0.02;
+
+        mitos.forEach((m, i) => {
+            m.position.x += Math.sin(time+i) * 0.001;
+            m.position.y += Math.cos(time+i) * 0.001;
+        });
+
+        ribos.forEach((r, i) => {
+            r.position.x += Math.cos(time+i*2) * 0.001;
+            r.position.z += Math.sin(time+i*2) * 0.001;
+        });
+    });
+
+    return scene;
+}
+
+const scene = createScene();
+
+engine.runRenderLoop(() => {
+    scene.render();
+});
+
+window.addEventListener("resize", () => {
+    engine.resize();
+});
+</script>
+</body>
+</html>
